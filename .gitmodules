@@ -1,3 +1,0 @@
-[submodule "arduino-code"]
-	path = ages-arduino-code
-	url = git@github.com:AgeManning/arduino-code.git
