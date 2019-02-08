@@ -17,16 +17,18 @@ int drawingMemory[ledsPerStrip*6];
 const int config = WS2811_GRB | WS2811_800kHz;
 OctoWS2811 leds(ledsPerStrip, displayMemory, drawingMemory, config);
 
-int j;
+int j = 0;
+byte r,g,b;
+int i;
 
 void setup() {
-  Serial.begin(50000);
+  Serial.begin(500000);
   leds.begin();
   leds.show();
 }
 
 int serialGlediator() {
-  while (!Serial.available()) {idlePattern(30, 0);}
+  while (!Serial.available()) {}
   return Serial.read();
 }
 
