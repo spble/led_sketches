@@ -41,20 +41,23 @@ void idlePattern(int g, int r) {
 
 
 void loop() {
-  byte r,g,b;
-  int i;
 
   //while (serialGlediator() != 1) {idlePattern(5, 30);}
 
+  // 255 is the 'end of frame' command
+  // 254 is the 'skip pixel' command
+
   for (i=0; i < NUM_LEDS; i++) {
-    g = serialGlediator();
-    if(g == 255) break;
-    r = serialGlediator();
-    if(r == 255) break;
     b = serialGlediator();
     if(b == 255) break;
+    r = serialGlediator();
+    if(r == 255) break;
+    g = serialGlediator();
+    if(g == 255) break;
+    if(r == 254 && g == 254 && b == 254) continue;
     leds.setPixel(i, Color(r,g,b));
   }
+  j++;
   leds.show();
 }
 
