@@ -1,3 +1,0 @@
-[submodule "artnet_to_serial/python-artnet"]
-	path = artnet_to_serial/python-artnet
-	url = git@github.com:spble/python-artnet.git
