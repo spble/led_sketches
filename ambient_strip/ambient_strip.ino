@@ -69,8 +69,7 @@ void setup() {
 
 void loop(){
 	rotatePaletteSunset(7);
-    twinkle(2);
+    //twinkle(2);
     strip.show();
 	sequence_no++;
 }
-

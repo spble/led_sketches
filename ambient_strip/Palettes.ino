@@ -25,14 +25,6 @@ uint32_t Sunset(unsigned int i) {
   if (i > 764) return strip.Color((i % 255), 0, 255 - (i % 255));          //blue -> red
   if (i > 509) return strip.Color(255 - (i % 255), 0, 255);                //purple -> blue
   if (i > 255) return strip.Color(255, 128 - (i % 255) / 2, (i % 255));    //orange -> purple
-	if(sequence_no % skip_cycles > 0) return;
-
-	uint8_t twinkle_index = int(floor(sequence_no / skip_cycles)) % MAX_TWINKLES;
-
-	if (twinkles[twinkle_index] >= 0)
-		strip.setPixelColor(twinkles[twinkle_index], BLACK);
-	twinkles[twinkle_index] = random(strip.numPixels());
-	strip.setPixelColor(twinkles[twinkle_index], );
   return strip.Color(255, i / 2, 0);                                       //red -> orange
 }
 
