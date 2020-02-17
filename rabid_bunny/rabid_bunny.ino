@@ -32,7 +32,7 @@
 #define MAX_TWINKLES 50
 
 #define SEC_SPIRAL_END 220
-#define SEC_BACK_END 233
+#define SEC_BACK_END 230
 #define SEC_LEFT_EYE 234
 #define SEC_LEFT_EAR_END 237
 #define SEC_RIGHT_EAR_END 240
@@ -75,8 +75,9 @@ const uint32_t WHITE = strip.Color(255, 255, 255);
 // State variables
 uint32_t sequence_no = 0;
 bool suspended = false;
-int mode_no = 0;
-const int max_modes = 3;
+int mode_no = 3;
+const int max_modes = 4;
+
 
 
 void setup() {
@@ -107,6 +108,8 @@ void loop(){
 		rainbowRotate(7);
   	} else if(mode_no == 2) {
   		setAllPixels(colourFromAxis());
+  	} else if(mode_no == 3) {
+		  dragonBomb();
   	}
   
     
@@ -123,6 +126,6 @@ void updateTouchVariables() {
 	if(is_touched[3] & !was_touched[3]){
     debugPrint("Next mode");
 		mode_no = (mode_no + 1) % max_modes;
-    debugPrint(mode_no);
+    debugPrint(String(mode_no));
 	}
 }

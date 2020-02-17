@@ -41,3 +41,37 @@ void rotatePaletteSunset(int skip_cycles){
       strip.setPixelColor(l, Sunset(sequence_no + l));
     }
 }
+
+void dragonBomb(){
+
+	unsigned int num_pulses = 1;
+	float pulse_width = 0.8;
+  unsigned int gaussian_width = 8;
+	
+	unsigned int pulse_length = (SEC_BACK_END / num_pulses);
+	unsigned int starting_offset = sequence_no % (SEC_BACK_END*3);
+
+
+  unsigned int pulse_no = 0;
+  unsigned int red, green, blue;
+	for(unsigned int l = 0; l < strip.numPixels(); l++){
+		if(l < SEC_BACK_END){
+			// Do spiral pulse
+      pulse_no = l/pulse_length;
+      red = 0;
+      green = gaussian_pulse((l - starting_offset)- (pulse_no * pulse_length), gaussian_width);
+      blue = gaussian_pulse((l - starting_offset)- (pulse_no * pulse_length), gaussian_width/2);
+			strip.setPixelColor(l, strip.Color(red, green, blue));
+		} else {
+      if(green > 0){
+			  red = 255 - random(1, starting_offset);
+			  strip.setPixelColor(l, strip.Color(red, 0, 0));
+      } else {
+        strip.setPixelColor(l, BLACK);
+      }
+		}
+	}
+
+
+	
+}
