@@ -134,6 +134,12 @@ uint32_t colourFromAxis(){
 	return strip.Color(red, green, blue);
 }
 
-unsigned int gaussian_pulse(int x, int width) {
-	return 255*exp(-1*((x^2)/((2*width)^2)));
+long gaussian_pulse(long x, long width) {
+	if(abs(x) > width*5) return 0;
+	return 255*exp(-1*((pow(x, 2))/(pow(2*width, 2))));
+}
+
+long leading_pulse(long x, long trail) {
+	if(x > 0) return 0;
+	return gaussian_pulse(x, trail);
 }
