@@ -64,13 +64,13 @@ void dragonBomb(){
 			pulse_no = l/pulse_length;
 			for(unsigned int p = 0; p < num_pulses; p++) {
 				x_position = (l - starting_offset + gaussian_width*4) + (p * pulse_length);
-				green += leading_pulse(x_position, gaussian_width);
+				green += leading_pulse(x_position + 4, gaussian_width);
 				blue += leading_pulse(x_position, gaussian_width/2);
+				red += (leading_pulse(x_position, gaussian_width/4));
 			}
 			strip.setPixelColor(l, strip.Color(red, green, blue));
 		} else {
 			red = green - random(0, green/2);
-			red += blue - random(0, blue/2);
 			strip.setPixelColor(l, strip.Color(red, 0, red*0.05));
 		}
 	}
