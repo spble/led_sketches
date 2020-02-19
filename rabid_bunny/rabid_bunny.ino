@@ -75,7 +75,7 @@ const uint32_t WHITE = strip.Color(255, 255, 255);
 // State variables
 uint32_t sequence_no = 0;
 bool suspended = false;
-int mode_no = 3;
+int mode_no = 0;
 const int max_modes = 4;
 uint8_t current_brightness = BRIGHTNESS_MED;
 
@@ -94,7 +94,6 @@ void loop() {
   updateAxis();
   updateIsTouched();
   updateTouchVariables();
-  //debugPrint(touchRead(touch_pins[4]));
   debugPrint();
 
 
@@ -122,7 +121,6 @@ void loop() {
 void updateTouchVariables() {
   if (is_touched[0]) {
     // The 'shift' button ('A') has been pressed. Do brightness and stuff.
-  } else {
     if (is_touched[3] & !was_touched[3]) {
       debugPrint("Toggle Suspend");
       suspended = !suspended;
@@ -130,20 +128,20 @@ void updateTouchVariables() {
     if (is_touched[1] & !was_touched[1]) {
       debugPrint("Brightness down");
     }
-    
+  } else {
+	  if (is_touched[3] & !was_touched[3]) {
+		debugPrint("Next mode");
+		mode_no = (mode_no + 1) % max_modes;
+		debugPrint(String(mode_no));
+	  }
+	  if (is_touched[2] & !was_touched[2]) {
+		debugPrint("Mode reset");
+		if(mode_no == 2) {
+		  setupAxis();
+		} else {
+		  sequence_no = 0;
+		}
+	  }
   }
   
-  if (is_touched[3] & !was_touched[3]) {
-    debugPrint("Next mode");
-    mode_no = (mode_no + 1) % max_modes;
-    debugPrint(String(mode_no));
-  }
-  if (is_touched[2] & !was_touched[2]) {
-    debugPrint("Mode reset");
-    if(mode_no == 2) {
-      setupAxis();
-    } else {
-      sequence_no = 0;
-    }
-  }
 }
