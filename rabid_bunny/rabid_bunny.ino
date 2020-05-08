@@ -29,10 +29,11 @@
 #define BRIGHTNESS_LOW 15
 #define BRIGHTNESS_MED 40
 #define BRIGHTNESS_HIGH 255
+#define BRIGHTNESS_INCREMENT 5
 #define MAX_TWINKLES 50
 
 #define SEC_SPIRAL_END 220
-#define SEC_BACK_END 230
+#define SEC_BACK_END 231
 #define SEC_LEFT_EYE 234
 #define SEC_LEFT_EAR_END 237
 #define SEC_RIGHT_EAR_END 240
@@ -76,7 +77,7 @@ const uint32_t WHITE = strip.Color(255, 255, 255);
 uint32_t sequence_no = 0;
 bool suspended = false;
 int mode_no = 0;
-const int max_modes = 4;
+const int max_modes = 7;
 uint8_t current_brightness = BRIGHTNESS_MED;
 
 
@@ -94,7 +95,9 @@ void loop() {
   updateAxis();
   updateIsTouched();
   updateTouchVariables();
-  debugPrint();
+  if(sequence_no % 10 == 0){
+    debugPrint();
+  }
 
 
   // We're in a suspended state, just set to black
@@ -105,17 +108,24 @@ void loop() {
     if (mode_no == 0) {
       rotatePaletteSunset(7);
     } else if (mode_no == 1) {
-      rainbowRotate(7);
+      rainbowRotate(1);
     } else if (mode_no == 2) {
       setAllPixels(colourFromAxis());
     } else if (mode_no == 3) {
       dragonBomb();
+    } else if (mode_no == 4) {
+		looseParticles();
+    } else if (mode_no == 5) {
+		descendingTwinklePulse();
+    } else if (mode_no == 6) {
+		fire(10, 150);
     }
 
 
     sequence_no++;
   }
   strip.show();
+  Serial.println("");
 }
 
 void updateTouchVariables() {
@@ -127,6 +137,13 @@ void updateTouchVariables() {
     }
     if (is_touched[1] & !was_touched[1]) {
       debugPrint("Brightness down");
+      current_brightness = max(current_brightness - BRIGHTNESS_INCREMENT, 0);
+      strip.setBrightness(current_brightness);
+    }
+    if (is_touched[2] & !was_touched[2]) {
+      debugPrint("Brightness up");
+      current_brightness = min(current_brightness + BRIGHTNESS_INCREMENT, 255);
+      strip.setBrightness(current_brightness);
     }
   } else {
 	  if (is_touched[3] & !was_touched[3]) {
@@ -136,8 +153,16 @@ void updateTouchVariables() {
 	  }
 	  if (is_touched[2] & !was_touched[2]) {
 		debugPrint("Mode reset");
-		if(mode_no == 2) {
+		if(mode_no == 2 || mode_no == 4) {
 		  setupAxis();
+		} else {
+		  sequence_no = 0;
+		}
+	  }
+	  if (is_touched[1] & !was_touched[1]) {
+		debugPrint("Mode aux");
+		if(mode_no == 4) {
+		  particleReset();
 		} else {
 		  sequence_no = 0;
 		}

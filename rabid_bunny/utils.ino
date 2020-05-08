@@ -12,7 +12,7 @@ void setupLEDStrip(int brightness){
 }
 
 void setupSerial(){
-	Serial.begin(9600);
+	Serial.begin(1234);
 	Serial.println("Starting up...");
 }
 
@@ -32,7 +32,7 @@ void resetAxis() {
 
 void debugPrint(String info){
 	if(SERIAL_OUT) {
-		Serial.println(info);
+		Serial.print(info);
 	}
 }
 
@@ -51,6 +51,11 @@ void debugPrint() {
 				msg += ", ";
 			}
 		}
+    int16_t *xyz = getXYZ();
+    msg += "X,Y,Z: " 
+      + String(xyz[0]) + ", "
+      + String(xyz[1]) + ", "
+      + String(xyz[2]);
 		debugPrint(msg);
 	}
 }
