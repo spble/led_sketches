@@ -32,7 +32,7 @@
 #define MAX_TWINKLES 50
 
 #define SEC_SPIRAL_END 220
-#define SEC_BACK_END 233
+#define SEC_BACK_END 230
 #define SEC_LEFT_EYE 234
 #define SEC_LEFT_EAR_END 237
 #define SEC_RIGHT_EAR_END 240
@@ -63,11 +63,11 @@ uint8_t axis_activity[3] = {0};
 uint8_t total_activity_metric = 0;
 
 // LED Variables
-int16_t twinkles[MAX_TWINKLES] = {-1};
-const uint32_t BLACK = strip.Color(0,0,0);
-const uint32_t RED = strip.Color(128,0,0);
-const uint32_t GREEN = strip.Color(0,128,0);
-const uint32_t BLUE = strip.Color(0,0,128);
+int16_t twinkles[MAX_TWINKLES] = { -1};
+const uint32_t BLACK = strip.Color(0, 0, 0);
+const uint32_t RED = strip.Color(128, 0, 0);
+const uint32_t GREEN = strip.Color(0, 128, 0);
+const uint32_t BLUE = strip.Color(0, 0, 128);
 const uint32_t PINK = strip.Color(122, 40, 140);
 const uint32_t WHITE = strip.Color(255, 255, 255);
 
@@ -75,54 +75,75 @@ const uint32_t WHITE = strip.Color(255, 255, 255);
 // State variables
 uint32_t sequence_no = 0;
 bool suspended = false;
-int mode_no = 0;
-const int max_modes = 3;
+int mode_no = 3;
+const int max_modes = 4;
+uint8_t current_brightness = BRIGHTNESS_MED;
+
 
 
 void setup() {
-	setupTouch();
-	setupLEDStrip(BRIGHTNESS_MED);
-	setupAxis();
-	if(SERIAL_OUT) setupSerial();
+  setupTouch();
+  setupLEDStrip(current_brightness);
+  setupAxis();
+  if (SERIAL_OUT) setupSerial();
 }
 
 
-void loop(){
-	// Update state
-	updateAxis();
-	updateIsTouched();
-	updateTouchVariables();
-	//debugPrint(touchRead(touch_pins[4]));
+void loop() {
+  // Update state
+  updateAxis();
+  updateIsTouched();
+  updateTouchVariables();
+  //debugPrint(touchRead(touch_pins[4]));
   debugPrint();
 
 
-	// We're in a suspended state, just set to black
-	if(suspended){
+  // We're in a suspended state, just set to black
+  if (suspended) {
     debugPrint("Going Black");
-		setAllPixels(BLACK);
-	} else {
-  	if(mode_no == 0) {
-  		rotatePaletteSunset(7);
-	} else if(mode_no == 1) {
-		rainbowRotate(7);
-  	} else if(mode_no == 2) {
-  		setAllPixels(colourFromAxis());
-  	}
-  
-    
-  	sequence_no++;
-	}
+    setAllPixels(BLACK);
+  } else {
+    if (mode_no == 0) {
+      rotatePaletteSunset(7);
+    } else if (mode_no == 1) {
+      rainbowRotate(7);
+    } else if (mode_no == 2) {
+      setAllPixels(colourFromAxis());
+    } else if (mode_no == 3) {
+      dragonBomb();
+    }
+
+
+    sequence_no++;
+  }
   strip.show();
 }
 
 void updateTouchVariables() {
-	if(is_touched[1] & !was_touched[1]){
-        debugPrint("Toggle Suspend");
-        suspended = !suspended;
-	}
-	if(is_touched[3] & !was_touched[3]){
+  if (is_touched[0]) {
+    // The 'shift' button ('A') has been pressed. Do brightness and stuff.
+  } else {
+    if (is_touched[3] & !was_touched[3]) {
+      debugPrint("Toggle Suspend");
+      suspended = !suspended;
+    }
+    if (is_touched[1] & !was_touched[1]) {
+      debugPrint("Brightness down");
+    }
+    
+  }
+  
+  if (is_touched[3] & !was_touched[3]) {
     debugPrint("Next mode");
-		mode_no = (mode_no + 1) % max_modes;
-    debugPrint(mode_no);
-	}
+    mode_no = (mode_no + 1) % max_modes;
+    debugPrint(String(mode_no));
+  }
+  if (is_touched[2] & !was_touched[2]) {
+    debugPrint("Mode reset");
+    if(mode_no == 2) {
+      setupAxis();
+    } else {
+      sequence_no = 0;
+    }
+  }
 }

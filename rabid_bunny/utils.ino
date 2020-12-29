@@ -133,3 +133,13 @@ uint32_t colourFromAxis(){
 	blue = int(pow(floor(xyz[2]/6.0),2));
 	return strip.Color(red, green, blue);
 }
+
+long gaussian_pulse(long x, long width) {
+	if(abs(x) > width*5) return 0;
+	return 255*exp(-1*((pow(x, 2))/(pow(2*width, 2))));
+}
+
+long leading_pulse(long x, long trail) {
+	if(x > 0) return 0;
+	return gaussian_pulse(x, trail);
+}
