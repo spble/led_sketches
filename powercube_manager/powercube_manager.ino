@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
+#include <FlexCAN.h>
+
 
 
 #define OLED_MOSI 5
@@ -8,10 +10,10 @@
 #define OLED_CS 11
 #define OLED_RESET 10
 
-int ALARM_TRIGGER_PIN = 2;
-int SILENCE_BTN_LED_PIN = 0;
+int ALARM_TRIGGER_PIN = 14;
+int SILENCE_BTN_LED_PIN = 23;
 int SILENCE_BTN_PIN = 1;
-int SILENCE_RELAY_PIN = 14;
+int SILENCE_RELAY_PIN = 19;
 int TEENSY_LED_PIN = 13;
 
 bool alarm = false;
@@ -41,6 +43,7 @@ U8G2_SH1106_128X64_NONAME_F_4W_SW_SPI display(U8G2_R2, OLED_CLK, OLED_MOSI, OLED
 
 
 void setup(void) {
+    delay(500);
     Serial.begin(115200);
     Serial.write("Starting up!");
 
@@ -55,12 +58,18 @@ void setup(void) {
     // Setup screen
     display.begin();
 
+
+    //CANBUS setup
+    Can0.begin(125000);  
+
+
       
 
 }
 
 void loop(void) {
     alarm_state();
+    read_canbus();
     draw_status();
 }
 
@@ -70,17 +79,17 @@ void draw_status() {
   // Pack voltage
   display.setFont(u8g2_font_timB12_tr);
   char pack_volts_s[8];
-  String pack_volts_str = String(pack_volts, 2);
+  String pack_volts_str = String(pack_volts, 1);
   pack_volts_str.concat("V");
   pack_volts_str.toCharArray(pack_volts_s, 8);
   display.drawStr(0, 12, pack_volts_s);
 
   // Pack current (avg)
   char pack_current_s[9];
-  String pack_current_str = String(pack_current, 2);
+  String pack_current_str = String(pack_current, 1);
   pack_current_str.concat("A");
   pack_current_str.toCharArray(pack_current_s, 9);
-  display.drawStr(64, 12, pack_current_s);
+  display.drawStr(70, 12, pack_current_s);
 
   display.drawHLine(0, 14, 128);
   display.drawVLine(43, 14, 64);
@@ -184,4 +193,27 @@ void alarm_state() {
   } else {
     digitalWrite(SILENCE_RELAY_PIN, LOW);
   }
+}
+
+
+void read_canbus(){
+    CAN_message_t inMsg;
+    if(Can0.available()){
+      Can0.read(inMsg);
+      if(inMsg.id == 0x100){
+        cell_volts[2] = (float)((inMsg.buf[6] << 8) | inMsg.buf[7])/10000.0;
+        soc = (float)inMsg.buf[2]/2;
+        pack_volts = (float)((inMsg.buf[0] << 8) | inMsg.buf[1])/10.0;
+        signed short int current_bytes = ((inMsg.buf[3] << 8) | inMsg.buf[4]);
+        pack_current = current_bytes/10.0;
+
+        
+      } else if(inMsg.id == 0x101){
+        temps[0] = (float)inMsg.buf[0];
+        temps[1] = (float)inMsg.buf[1];
+        temps[2] = (float)inMsg.buf[2];
+        cell_volts[0] = (float)((inMsg.buf[5] << 8) | inMsg.buf[6])/10000.0;
+        cell_volts[1] = (float)((inMsg.buf[3] << 8) | inMsg.buf[4])/10000.0;
+      }
+    }
 }
