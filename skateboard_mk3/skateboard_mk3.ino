@@ -1,30 +1,31 @@
 #include <Adafruit_NeoPixel.h>
 
 // LED Settings
-#define TOPPIN 2
-#define TOPSTRIPSIZE 95 
+#define TOPLEFTPIN 21
+#define TOPRIGHTPIN 22
+#define TOPSTRIPSIZE 39 
 
-#define BOTTOMPIN 1
+#define BOTTOMPIN 23
 #define BOTTOMSTRIPSIZE 94
 
-#define SIDELENGTH 42
+#define BOTTOMSIDELENGTH 42
 
 #define BASE_BRIGHTNESS 150
-#define BRIGHTNESS_INCREMENT 10
+#define BRIGHTNESS_INCREMENT 15
+
+#define TEENSY_LED_PIN 13
 
 // Touch settings
-#define NUM_TOUCH_PINS 3
-#define TOUCH_PIN_A A3
-#define END 0
-#define TOUCH_PIN_B A4
-#define DOWN 1
-#define TOUCH_PIN_C A5
-#define UP 2
+#define NUM_TOUCH_PINS 2
+#define TOUCH_PIN_A 18
+#define BTN_A 0
+#define TOUCH_PIN_B 19
+#define BTN_B 1
 #define TOUCH_MULTIPLIER_THRESHOLD 1.5
 
 #define DEBUG true
 
-int touch_pins[NUM_TOUCH_PINS] = {TOUCH_PIN_A, TOUCH_PIN_B, TOUCH_PIN_C};
+int touch_pins[NUM_TOUCH_PINS] = {TOUCH_PIN_A, TOUCH_PIN_B};
 int touch_base[NUM_TOUCH_PINS];
 bool is_touched[NUM_TOUCH_PINS];
 bool was_touched[NUM_TOUCH_PINS];
@@ -37,6 +38,9 @@ int mode_no = 0;
 const int NUM_OF_MODES = 3;
 
 
+bool teensy_led_state = true;
+
+
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = pin number (most are valid)
@@ -45,16 +49,16 @@ const int NUM_OF_MODES = 3;
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-Adafruit_NeoPixel tstrip = Adafruit_NeoPixel(TOPSTRIPSIZE, TOPPIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel tlstrip = Adafruit_NeoPixel(TOPSTRIPSIZE, TOPLEFTPIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel trstrip = Adafruit_NeoPixel(TOPSTRIPSIZE, TOPRIGHTPIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel bstrip = Adafruit_NeoPixel(BOTTOMSTRIPSIZE, BOTTOMPIN, NEO_GRB + NEO_KHZ800);
-
-const uint32_t BLACK = tstrip.Color(0,0,0);
-const uint32_t RED = tstrip.Color(255,0,0);
-const uint32_t YELLOW = tstrip.Color(235,229,52);
-const uint32_t GREEN = tstrip.Color(0,128,0);
-const uint32_t BLUE = tstrip.Color(0,0,128);
-const uint32_t PINK = tstrip.Color(122, 40, 140);
-const uint32_t WHITE = tstrip.Color(255, 255, 255);
+const uint32_t BLACK = bstrip.Color(0,0,0);
+const uint32_t RED = bstrip.Color(255,0,0);
+const uint32_t YELLOW = bstrip.Color(235,229,52);
+const uint32_t GREEN = bstrip.Color(0,128,0);
+const uint32_t BLUE = bstrip.Color(0,0,128);
+const uint32_t PINK = bstrip.Color(122, 40, 140);
+const uint32_t WHITE = bstrip.Color(255, 255, 255);
 
 void setup() {
     //typedef void (* FP)(*Adafruit_NeoPixel, *Adafruit_NeoPixel)
@@ -62,9 +66,16 @@ void setup() {
     if(DEBUG == true){
         setupSerial();
     }
-    setupLEDStrip(&tstrip, BASE_BRIGHTNESS);
+    setupLEDStrip(&tlstrip, BASE_BRIGHTNESS);
+    setupLEDStrip(&trstrip, BASE_BRIGHTNESS);
     setupLEDStrip(&bstrip, BASE_BRIGHTNESS);
     setupTouch();
+    if(DEBUG){
+      pinMode(TEENSY_LED_PIN, OUTPUT);
+      digitalWrite(TEENSY_LED_PIN, teensy_led_state);
+    }
+
+    
 }
 
 void loop() {
@@ -74,12 +85,25 @@ void loop() {
     sequence_no++;
     debugPrint();
     if(suspended) {
-        setAllPixels(&tstrip, BLACK);
+        setAllPixels(&tlstrip, BLACK);
+        setAllPixels(&trstrip, BLACK);
         setAllPixels(&bstrip, BLACK);
     } else {
-        //MODES[mode_no](&tstrip, &bstrip)
-        rainbow(&tstrip, &bstrip);
+      if(mode_no == 0){
+        rainbow(&tlstrip, &trstrip, &bstrip);
+      } else if(mode_no == 1){
+        colourWipeRedYellow(&tlstrip, &trstrip, &bstrip);
+      } else if(mode_no == 2){
+        rotatePaletteSunset(&tlstrip, &trstrip, &bstrip);
+      }
     }
+
+    if(DEBUG){
+      digitalWrite(TEENSY_LED_PIN, teensy_led_state);
+      teensy_led_state = !teensy_led_state;
+    }
+
+    
     delay(10);
 }
 
@@ -87,36 +111,24 @@ void loop() {
 
 
 void updateTouchVariables() {
-    // If all three are pressed, suspend
-    if(is_touched[UP] & is_touched[DOWN] & is_touched[END] & (!was_touched[UP] | !was_touched[DOWN] | !was_touched[END])){
+    // If both are pressed, suspend
+    if(is_touched[BTN_A] & is_touched[BTN_B] & (!was_touched[BTN_A] | !was_touched[BTN_B])){
         debugPrint("Suspend");
         suspended = true;
         return;
     }
-    // If mode-UP is pressed, increase the mode and unsuspend
-    if(is_touched[UP] & !was_touched[UP] & !is_touched[DOWN] & !is_touched[END]){
+    // If BTN_A is pressed, change modes and unsuspend
+    if(is_touched[BTN_A] & !was_touched[BTN_A] & !is_touched[BTN_B]){
         mode_no = (mode_no + 1) % NUM_OF_MODES;
         suspended = false;
         debugPrint("Next mode: " + mode_no);
     }
-    // If mode-DOWN is pressed, increase the mode and unsuspend
-    if(is_touched[DOWN] & !was_touched[DOWN] & !is_touched[UP] & !is_touched[END]){
-        mode_no = max(0, (mode_no - 1) % NUM_OF_MODES);
-        suspended = false;
-        debugPrint("Prev mode: " + mode_no);
-    }
-    // If touching end, and up, increase brightness.
-    if(is_touched[END] & is_touched[UP] & !was_touched[UP] & !is_touched[DOWN]){
-        brightness = min(255, brightness + BRIGHTNESS_INCREMENT);
+    // If BTN_B is pressed, increase the brightness and unsuspend
+    if(is_touched[BTN_B] & !was_touched[BTN_B] & !is_touched[BTN_A]){
+        brightness = (brightness + BRIGHTNESS_INCREMENT) % 255;
         debugPrint("Brightness up: " + brightness);
-        tstrip.setBrightness(brightness);
-        bstrip.setBrightness(brightness);
-    }
-    // If touching end, and down, decrease brightness.
-    if(is_touched[END] & is_touched[DOWN] & !was_touched[DOWN] & !is_touched[UP]){
-        brightness = max(1, brightness - BRIGHTNESS_INCREMENT);
-        debugPrint("Brightness down: " + brightness);
-        tstrip.setBrightness(brightness);
+        tlstrip.setBrightness(brightness);
+        trstrip.setBrightness(brightness);
         bstrip.setBrightness(brightness);
     }
 }

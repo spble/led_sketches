@@ -25,7 +25,7 @@ void debugPrint(String info){
 void debugPrint() {
 	if(DEBUG) {
 		String msg = "";
-		msg += "Seq: " + String(sequence_no)
+		msg += "Seq: " + String(sequence_no) + "Bright: " + String(brightness)
             + " Mode: " + String(mode_no)
 			+ " Touch: ";
 		for(uint8_t i = 0; i < 4; i++){
@@ -34,6 +34,7 @@ void debugPrint() {
 				msg += ", ";
 			}
 		}
+   msg += "A: " + String(touch_base[0]) + "(" + String(touchRead(touch_pins[0])) + ")" + " B: " + String(touch_base[1]) + "(" + String(touchRead(touch_pins[1])) + ")";
 		debugPrint(msg);
 	}
 }
@@ -50,12 +51,12 @@ void updateIsTouched(){
 // The colours are a transition r - g - b - back to r.
 uint32_t Wheel(byte WheelPos) {
   if(WheelPos < 85) {
-   return tstrip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+   return bstrip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
   } else if(WheelPos < 170) {
    WheelPos -= 85;
-   return tstrip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+   return bstrip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
   } else {
    WheelPos -= 170;
-   return tstrip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+   return bstrip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
   }
 }
